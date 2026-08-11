@@ -1,0 +1,11 @@
+export const maxExternalLinksPerStep = 3;
+export const maxBlocksPerPage = 800;
+export const maxExternalLinksPerSource = 50;
+export const workflowYieldDuration = "1 second";
+export const workItemPollDuration = "5 seconds";
+export const maxWorkItemPollAttempts = 360;
+export const maxWorkflowCreateBatchSize = 100;
+export const maxWorkItemInsertBatchSize = 50;
+export const maxNotionRequestsPerPageWorkItem = 20;
+export const maxWorkItemsPerStartWindow = 5;
+export const workItemStartWindowSeconds = 2;

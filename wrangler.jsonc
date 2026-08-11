@@ -1,0 +1,73 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "notion-rag-mcp",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-08-12",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "vars": {
+    "NOTION_EMBEDDING_MODEL": "@cf/baai/bge-m3",
+    "NOTION_VECTORIZE_DIMENSIONS": "1024",
+    "NOTION_VECTORIZE_MONTHLY_UPSERT_DIMENSION_WARNING": "20000000",
+    "NOTION_VECTORIZE_MONTHLY_UPSERT_DIMENSION_BUDGET": "24000000"
+  },
+  "triggers": {
+    "crons": ["0 18 */4 * *"]
+  },
+  "d1_databases": [
+    {
+      "binding": "NOTION_RAG_DB",
+      "database_name": "notion-rag-mcp",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vectorize": [
+    {
+      "binding": "NOTION_VECTORIZE",
+      "index_name": "notion-rag-mcp"
+    }
+  ],
+  "workflows": [
+    {
+      "binding": "NOTION_REINDEX_WORKFLOW",
+      "name": "notion-rag-mcp-reindex",
+      "class_name": "NotionReindexWorkflow"
+    },
+    {
+      "binding": "NOTION_INDEX_WORK_ITEM_WORKFLOW",
+      "name": "notion-rag-mcp-index-work-item",
+      "class_name": "NotionIndexWorkItemWorkflow"
+    }
+  ],
+  "services": [
+    {
+      "binding": "NOTION_INDEX_SERVICE",
+      "service": "notion-rag-mcp"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "browser": {
+    "binding": "BROWSER"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.1
+    }
+  }
+
+  // Required secrets before deployment:
+  //   bunx wrangler secret put NOTION_API_TOKEN
+  //   bunx wrangler secret put MCP_SHARED_SECRET
+  // External-link indexing is disabled unless exact trusted hosts are listed in vars:
+  //   "NOTION_EXTERNAL_HOST_ALLOWLIST": "docs.example.com,handbook.example.com"
+}
