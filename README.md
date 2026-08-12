@@ -18,7 +18,7 @@ Notion を巡回して D1・FTS・Vectorize に索引し、MCP から検索で�
 - Firebase OAuth、組織・ロール別のアクセス制御、管理画面
 - スキルレジストリ、プラグイン配布、アプリ作成レポート
 
-MCP と管理用 REST エンドポイントは `MCP_SHARED_SECRET` の bearer token で保護します。既存の Firebase/OAuth を必要に応じて後から追加できますが、この初期切り出しでは依存させません。
+MCP と管理用 REST エンドポイントは、Cloudflare Zero Trust Access で Worker 全体を保護する前提です。Worker 自身は認証を実装しないため、Access を適用せずに公開してはいけません。
 
 ## MCP ツール
 
@@ -44,7 +44,7 @@ bun run check
 
 1. D1 を作成して ID を `wrangler.jsonc` の `NOTION_RAG_DB` に設定する。
 2. 1024 次元の Vectorize index を作成し、`NOTION_VECTORIZE` に設定する。埋め込みモデルを変更する場合は、次元数も必ず合わせる。
-3. `NOTION_API_TOKEN` と `MCP_SHARED_SECRET` を Worker secret として設定する。
+3. `NOTION_API_TOKEN` を Worker secret として設定する。
 4. D1 migration を適用してから Worker を deploy する。
 
 Workflows のページ処理を同一 Worker 内で分割するため、`NOTION_INDEX_SERVICE` はこの Worker 自身への Service Binding です。Worker を増やす構成ではありません。

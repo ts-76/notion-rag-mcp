@@ -12,7 +12,6 @@ export interface NotionRagMcpBindings {
   readonly NOTION_REINDEX_WORKFLOW?: WorkflowBinding<NotionReindexWorkflowPayload>;
   readonly NOTION_INDEX_SERVICE?: ServiceFetcher;
   readonly NOTION_INDEX_WORK_ITEM_WORKFLOW?: WorkflowBinding<NotionIndexWorkItemWorkflowPayload>;
-  readonly MCP_SHARED_SECRET?: string;
   readonly BROWSER?: BrowserBinding;
 }
 

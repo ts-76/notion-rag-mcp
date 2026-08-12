@@ -44,7 +44,6 @@ describe("Notion index worker HTTP contract", () => {
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
         headers: {
-          authorization: "Bearer index-secret",
           "content-type": "application/json",
         },
         body: JSON.stringify(createPayload({ jobId: "job-1" })),
@@ -70,7 +69,6 @@ describe("Notion index worker HTTP contract", () => {
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
         headers: {
-          authorization: "Bearer index-secret",
           "content-type": "application/json",
         },
         body: JSON.stringify(createPayload({ jobId: "job-repair", mode: "repair" })),
@@ -85,38 +83,13 @@ describe("Notion index worker HTTP contract", () => {
     });
   });
 
-  test("rejects unauthorized job requests", async () => {
+  test("accepts job requests without Worker bearer authentication", async () => {
     const response = await notionRagMcpCloudflareWorker.fetch(
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
         body: JSON.stringify(createPayload({ jobId: "job-unauthorized" })),
       }),
       createEnv({ workflow: new FakeWorkflowBinding() }),
-    );
-
-    expect(response.status).toBe(401);
-  });
-
-  test("fails closed on the public endpoint when the shared secret is missing", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
-      new Request("https://index.example.test/reindex-jobs", {
-        method: "POST",
-        body: JSON.stringify(createPayload()),
-      }),
-      createEnv({ workflow: new FakeWorkflowBinding(), secret: null }),
-    );
-
-    expect(response.status).toBe(401);
-  });
-
-  test("accepts private service-binding requests without a public shared secret", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
-      new Request("https://notion-rag-mcp.internal/reindex-jobs", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(createPayload()),
-      }),
-      createEnv({ workflow: new FakeWorkflowBinding(), secret: null }),
     );
 
     expect(response.status).toBe(200);
@@ -126,7 +99,6 @@ describe("Notion index worker HTTP contract", () => {
     const response = await notionRagMcpCloudflareWorker.fetch(
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
-        headers: { authorization: "Bearer index-secret" },
         body: JSON.stringify(createPayload({ jobId: "job-no-workflow" })),
       }),
       createEnv(),
@@ -143,7 +115,7 @@ describe("Notion index worker HTTP contract", () => {
     const response = await notionRagMcpCloudflareWorker.fetch(
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
-        headers: { authorization: "Bearer index-secret", "content-type": "application/json" },
+        headers: { "content-type": "application/json" },
         body: "{",
       }),
       createEnv({ workflow: new FakeWorkflowBinding() }),
@@ -160,7 +132,7 @@ describe("Notion index worker HTTP contract", () => {
     const response = await notionRagMcpCloudflareWorker.fetch(
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
-        headers: { authorization: "Bearer index-secret", "content-type": "application/json" },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({ jobId: "job-without-source" }),
       }),
       createEnv({ workflow: new FakeWorkflowBinding() }),
@@ -177,7 +149,7 @@ describe("Notion index worker HTTP contract", () => {
     const response = await notionRagMcpCloudflareWorker.fetch(
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
-        headers: { authorization: "Bearer index-secret", "content-type": "application/json" },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify(createPayload({ jobId: "job-fails" })),
       }),
       createEnv({ workflow: new FakeWorkflowBinding({ createError: new Error("workflow down") }) }),
@@ -193,7 +165,6 @@ describe("Notion index worker HTTP contract", () => {
   test("returns Workflow status for a job id", async () => {
     const response = await notionRagMcpCloudflareWorker.fetch(
       new Request("https://index.example.test/reindex-jobs/job-1", {
-        headers: { authorization: "Bearer index-secret" },
       }),
       createEnv({ workflow: new FakeWorkflowBinding({ status: { state: "running" } }) }),
     );
@@ -227,7 +198,6 @@ describe("Notion index worker HTTP contract", () => {
   test("reports Workflow status failures", async () => {
     const response = await notionRagMcpCloudflareWorker.fetch(
       new Request("https://index.example.test/reindex-jobs/job-1", {
-        headers: { authorization: "Bearer index-secret" },
       }),
       createEnv({ workflow: new FakeWorkflowBinding({ statusError: new Error("status down") }) }),
     );
@@ -256,13 +226,9 @@ function createEnv(
   input: {
     readonly workflow?: FakeWorkflowBinding;
     readonly db?: FakeD1;
-    readonly secret?: string | null;
   } = {},
 ): NotionRagMcpBindings {
   return {
-    ...(input.secret === null
-      ? {}
-      : { MCP_SHARED_SECRET: input.secret ?? "index-secret" }),
     NOTION_RAG_DB: input.db ?? new FakeD1([]),
     ...(input.workflow ? { NOTION_REINDEX_WORKFLOW: input.workflow } : {}),
   };

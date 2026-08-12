@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { isAuthorizedRequest, jsonResponse } from "../lib/http";
+import { jsonResponse } from "../lib/http";
 import { handleNativeMcpRequest } from "../lib/native-mcp";
 import type {
   NotionRagMcpBindings,
@@ -30,22 +30,11 @@ export { startScheduledNotionReindexes } from "../features/indexing/indexer";
 export function createNotionRagMcpHonoApp() {
   const app = new Hono<{ Bindings: NotionRagMcpBindings }>();
   app.get("/health", () => jsonResponse({ status: "ok", app: notionRagMcpApp.name }));
-  app.all("/mcp", async (context) => {
-    const authorization = await requirePublicAuthorization(context.req.raw, context.env);
-    if (authorization) {
-      return authorization;
-    }
-    return await handleNativeMcpRequest(context, createNotionRagMcpServer);
-  });
-  app.get("/sources", async (context) => {
-    const authorization = await requirePublicAuthorization(context.req.raw, context.env);
-    return authorization ?? jsonResponse(await listNotionSources(context.env));
-  });
+  app.all("/mcp", async (context) =>
+    await handleNativeMcpRequest(context, createNotionRagMcpServer),
+  );
+  app.get("/sources", async (context) => jsonResponse(await listNotionSources(context.env)));
   app.put("/sources/:pageId", async (context) => {
-    const authorization = await requirePublicAuthorization(context.req.raw, context.env);
-    if (authorization) {
-      return authorization;
-    }
     let name: string | undefined;
     try {
       const body = await context.req.json<{ name?: unknown }>();
@@ -61,10 +50,9 @@ export function createNotionRagMcpHonoApp() {
       }),
     );
   });
-  app.post("/sources/:sourceId/reindex", async (context) => {
-    const authorization = await requirePublicAuthorization(context.req.raw, context.env);
-    return authorization ?? jsonResponse(await startNotionReindex(context.env, context.req.param("sourceId")));
-  });
+  app.post("/sources/:sourceId/reindex", async (context) =>
+    jsonResponse(await startNotionReindex(context.env, context.req.param("sourceId"))),
+  );
   app.post("/internal/workflow-step", async (context) => {
     if (new URL(context.req.url).hostname !== internalServiceHostname) {
       return jsonResponse({ status: "not_found" }, 404);
@@ -82,9 +70,6 @@ export function createNotionRagMcpHonoApp() {
     }
   });
   app.post("/reindex-jobs", async (context) => {
-    if (!(await isAuthorizedIndexRequest(context.req.raw, context.env))) {
-      return jsonResponse({ status: "unauthorized" }, 401);
-    }
     if (!context.env.NOTION_REINDEX_WORKFLOW) {
       return jsonResponse({ status: "not_configured", reason: "workflow_missing" }, 503);
     }
@@ -108,9 +93,6 @@ export function createNotionRagMcpHonoApp() {
     }
   });
   app.get("/reindex-jobs/:jobId", async (context) => {
-    if (!(await isAuthorizedIndexRequest(context.req.raw, context.env))) {
-      return jsonResponse({ status: "unauthorized" }, 401);
-    }
     if (!context.env.NOTION_REINDEX_WORKFLOW) {
       return jsonResponse({ status: "not_configured", reason: "workflow_missing" }, 503);
     }
@@ -163,22 +145,6 @@ export class NotionIndexWorkItemWorkflow extends WorkflowEntrypoint<
       async () => runNotionIndexWorkItemWorkflow({ env: this.env, payload: event.payload }),
     );
   }
-}
-
-async function isAuthorizedIndexRequest(request: Request, env: NotionRagMcpBindings) {
-  if (new URL(request.url).hostname === internalServiceHostname) {
-    return true;
-  }
-  return await isAuthorizedRequest(request, env);
-}
-
-async function requirePublicAuthorization(request: Request, env: NotionRagMcpBindings) {
-  if (!env.MCP_SHARED_SECRET) {
-    return jsonResponse({ status: "not_configured", reason: "mcp_shared_secret_missing" }, 503);
-  }
-  return (await isAuthorizedRequest(request, env))
-    ? null
-    : jsonResponse({ status: "unauthorized" }, 401);
 }
 
 function isNotionReindexWorkflowPayload(value: unknown): value is NotionReindexWorkflowPayload {
