@@ -1,8 +1,10 @@
 # notion-rag-mcp
 
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https%3A%2F%2Fgithub.com%2Fts-76%2Fnotion-rag-mcp)
+
 Notion を巡回して D1・FTS・Vectorize に索引し、MCP から検索できる単一の Cloudflare Worker です。`staff-ai-toolkit` の Notion RAG と MCP 入口だけを独立させています。
 
-このリポジトリでは Cloudflare リソースの作成やデプロイを行っていません。`wrangler.jsonc` の D1 ID は、実際にプロビジョニングする段階で設定してください。
+このリポジトリ自体では Cloudflare リソースの作成やデプロイを行っていません。上のボタンを実行した人の Cloudflare アカウントでのみ、必要なリソースが作成されます。
 
 ## 含むもの・含まないもの
 
@@ -31,10 +33,21 @@ MCP と管理用 REST エンドポイントは、Cloudflare Zero Trust Access �
 | `notion_reindex_start` | ソースの耐久的な再インデックスを開始する |
 | `notion_reindex_status` | 再インデックスの進捗を取得する |
 
+## Deploy to Cloudflare
+
+上のボタンは、リポジトリを自分の GitHub アカウントへ複製し、Workers Builds でデプロイします。D1、Vectorize、Workers AI、Browser Rendering、Workflows のバインディングは `wrangler.jsonc` から作成・接続され、`deploy` スクリプトで D1 migration を適用してから Worker を公開します。
+
+セットアップ画面では `NOTION_API_TOKEN` を入力します。この値は `.dev.vars.example` には含まれておらず、Worker secret として保存されます。Notion integration には対象のページ・データベースを共有してください。
+
+この標準ボタンは公開 GitHub リポジトリ向けです。現時点の `ts-76/notion-rag-mcp` は非公開のため、第三者向けに配布する前に公開設定へ変更してください。この変更ではリポジトリの公開設定や Cloudflare リソースを変更していません。
+
+デプロイ完了後、Worker 全体を Cloudflare Zero Trust Access で保護してください。Worker 内に共有シークレット認証はありません。
+
 ## ローカル検証
 
 ```sh
 bun install
+bun run lint:secrets
 bun run check
 ```
 
@@ -46,6 +59,8 @@ bun run check
 2. 1024 次元の Vectorize index を作成し、`NOTION_VECTORIZE` に設定する。埋め込みモデルを変更する場合は、次元数も必ず合わせる。
 3. `NOTION_API_TOKEN` を Worker secret として設定する。
 4. D1 migration を適用してから Worker を deploy する。
+
+Deploy to Cloudflare ボタンではこの準備を対話形式で行えます。Wrangler を直接使う場合は、リソース作成と ID 設定後に `bun run deploy` を実行します。
 
 Workflows のページ処理を同一 Worker 内で分割するため、`NOTION_INDEX_SERVICE` はこの Worker 自身への Service Binding です。Worker を増やす構成ではありません。
 

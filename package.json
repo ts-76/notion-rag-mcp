@@ -6,7 +6,9 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "check": "bun run typecheck && bun run test"
+    "lint:secrets": "secretlint \"**/*\"",
+    "check": "bun run typecheck && bun run lint:secrets && bun run test",
+    "deploy": "wrangler d1 migrations apply NOTION_RAG_DB --remote && wrangler deploy"
   },
   "dependencies": {
     "@cloudflare/puppeteer": "^1.1.0",
@@ -16,9 +18,18 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@secretlint/secretlint-rule-preset-recommend": "^13.0.4",
     "@types/node": "^24.0.0",
+    "secretlint": "^13.0.4",
     "typescript": "^5.9.3",
     "vitest": "^4.1.8",
     "wrangler": "^4.114.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "NOTION_API_TOKEN": {
+        "description": "Create a Notion internal integration and enter its token. Share the required pages and databases with that integration."
+      }
+    }
   }
 }
