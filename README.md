@@ -10,7 +10,7 @@ Notion を巡回して D1・FTS・Vectorize に索引し、MCP から検索で�
 
 含むもの:
 
-- Streamable HTTP の MCP エンドポイント (`/mcp`)
+- Streamable HTTP の MCP エンドポイント (`/mcp`、MCP 2026-07-28 と従来の2025系クライアントに対応)
 - Notion のページ・データベース巡回、ブロックのチャンク化、外部リンクの Markdown 取り込み
 - Workers AI による埋め込み、D1/FTS と Vectorize を使うハイブリッド検索
 - 再インデックスを分割・再試行する Cloudflare Workflows と定期実行

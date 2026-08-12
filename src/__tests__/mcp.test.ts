@@ -41,14 +41,69 @@ describe("Notion RAG MCP endpoint", () => {
       "notion_source_upsert",
     ]);
   });
+
+  test("accepts stateless MCP 2026-07-28 requests", async () => {
+    const response = await notionRagMcpCloudflareWorker.fetch(
+      jsonRpcRequest(
+        {
+          id: 3,
+          method: "tools/list",
+          params: {
+            _meta: {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": { name: "vitest", version: "0.0.0" },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+            },
+          },
+        },
+        {
+          "mcp-method": "tools/list",
+          "mcp-protocol-version": "2026-07-28",
+        },
+      ),
+    );
+    const payload = (await response.json()) as { readonly result: { readonly tools: unknown[] } };
+
+    expect(response.status).toBe(200);
+    expect(payload.result.tools).toHaveLength(6);
+  });
+
+  test("advertises MCP 2026-07-28 through server discovery", async () => {
+    const response = await notionRagMcpCloudflareWorker.fetch(
+      jsonRpcRequest(
+        {
+          id: 4,
+          method: "server/discover",
+          params: {
+            _meta: {
+              "io.modelcontextprotocol/clientCapabilities": {},
+              "io.modelcontextprotocol/clientInfo": { name: "vitest", version: "0.0.0" },
+              "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+            },
+          },
+        },
+        {
+          "mcp-method": "server/discover",
+          "mcp-protocol-version": "2026-07-28",
+        },
+      ),
+    );
+    const payload = (await response.json()) as {
+      readonly result: { readonly supportedVersions: readonly string[] };
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.result.supportedVersions).toContain("2026-07-28");
+  });
 });
 
-function jsonRpcRequest(body: Record<string, unknown>) {
+function jsonRpcRequest(body: Record<string, unknown>, extraHeaders: Record<string, string> = {}) {
   return new Request("https://mcp.example.test/mcp", {
     method: "POST",
     headers: {
       "content-type": "application/json",
       accept: "application/json, text/event-stream",
+      ...extraHeaders,
     },
     body: JSON.stringify({ jsonrpc: "2.0", ...body }),
   });

@@ -1,5 +1,5 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
+import { McpServer } from "@modelcontextprotocol/server";
+import { z } from "zod/v4";
 import type { NotionRagMcpBindings } from "../../worker/bindings";
 import { getNotionReindexStatus, startNotionReindex } from "../management/reindex";
 import { listNotionSources, upsertNotionSource } from "../management/sources";
@@ -13,7 +13,10 @@ export function createNotionRagMcpServer(env: NotionRagMcpBindings) {
     {
       title: "Search indexed Notion",
       description: "Search indexed Notion pages with hybrid semantic, FTS, and keyword retrieval.",
-      inputSchema: { query: z.string().min(1).max(500), limit: z.number().int().min(1).max(20).optional() },
+      inputSchema: z.object({
+        query: z.string().min(1).max(500),
+        limit: z.number().int().min(1).max(20).optional(),
+      }),
     },
     async ({ query, limit }) =>
       toolResult(
@@ -25,7 +28,7 @@ export function createNotionRagMcpServer(env: NotionRagMcpBindings) {
     {
       title: "Get indexed Notion page",
       description: "Read an indexed page without calling the Notion API at query time.",
-      inputSchema: { pageId: z.string().min(1).max(64) },
+      inputSchema: z.object({ pageId: z.string().min(1).max(64) }),
     },
     async ({ pageId }) => toolResult(await getIndexedNotionPage(env, pageId)),
   );
@@ -34,14 +37,21 @@ export function createNotionRagMcpServer(env: NotionRagMcpBindings) {
     {
       title: "Add or update Notion source",
       description: "Register a root Notion page as an index source. The integration must have access to the page.",
-      inputSchema: { pageId: z.string().min(1).max(64), name: z.string().min(1).max(200).optional() },
+      inputSchema: z.object({
+        pageId: z.string().min(1).max(64),
+        name: z.string().min(1).max(200).optional(),
+      }),
     },
     async ({ pageId, name }) =>
       toolResult(await upsertNotionSource({ env, pageId, ...(name === undefined ? {} : { name }) })),
   );
   server.registerTool(
     "notion_source_list",
-    { title: "List Notion sources", description: "List registered Notion RAG sources.", inputSchema: {} },
+    {
+      title: "List Notion sources",
+      description: "List registered Notion RAG sources.",
+      inputSchema: z.object({}),
+    },
     async () => toolResult(await listNotionSources(env)),
   );
   server.registerTool(
@@ -49,7 +59,7 @@ export function createNotionRagMcpServer(env: NotionRagMcpBindings) {
     {
       title: "Start Notion reindex",
       description: "Start a durable reindex workflow for a registered source.",
-      inputSchema: { sourceId: z.string().min(1).max(128) },
+      inputSchema: z.object({ sourceId: z.string().min(1).max(128) }),
     },
     async ({ sourceId }) => toolResult(await startNotionReindex(env, sourceId)),
   );
@@ -58,7 +68,7 @@ export function createNotionRagMcpServer(env: NotionRagMcpBindings) {
     {
       title: "Get Notion reindex status",
       description: "Read the current durable Workflow status of a reindex job.",
-      inputSchema: { jobId: z.string().min(1).max(200) },
+      inputSchema: z.object({ jobId: z.string().min(1).max(200) }),
     },
     async ({ jobId }) => toolResult(await getNotionReindexStatus(env, jobId)),
   );
