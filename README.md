@@ -20,7 +20,9 @@ Notion を巡回して D1・FTS・Vectorize に索引し、MCP から検索で�
 - Firebase OAuth、組織・ロール別のアクセス制御、管理画面
 - スキルレジストリ、プラグイン配布、アプリ作成レポート
 
-MCP と管理用 REST エンドポイントは、Cloudflare Zero Trust Access で Worker 全体を保護する前提です。Worker 自身は認証を実装しないため、Access を適用せずに公開してはいけません。
+公開する MCP と管理用 REST エンドポイントには、Cloudflare Zero Trust Access を適用してください。Worker 自身は認証を実装しないため、Access を適用せずに公開してはいけません。
+
+> **費用に関する注意:** Cloudflare Zero Trust Access の Free プランは 50 ユーザーまでです。51 ユーザー以上で利用する場合は有料プランが必要で、従量課金プランは現在 1 ユーザーあたり月額 7 米ドルです。Workers、D1、Vectorize などの利用料金はこれとは別に発生し得ます。料金は変更されるため、導入前に [Cloudflare Zero Trust の料金ページ](https://www.cloudflare.com/plans/zero-trust-services/) を確認してください。
 
 ## MCP ツール
 
@@ -32,6 +34,23 @@ MCP と管理用 REST エンドポイントは、Cloudflare Zero Trust Access �
 | `notion_source_list` | 登録済みソースを確認する |
 | `notion_reindex_start` | ソースの耐久的な再インデックスを開始する |
 | `notion_reindex_status` | 再インデックスの進捗を取得する |
+
+## 公式Notion MCPとの比較
+
+公式Notion MCPは、各メンバーがOAuthで接続し、自分のNotion権限の範囲で最新のページを検索・取得・更新するためのホスト型MCPです。個人の作業や、Notionを直接更新するワークフローに向いています。
+
+`notion-rag-mcp` は、組織で選定したページやデータベースを専用のNotion Integrationに共有し、検索用の索引として運用します。メンバーにはIntegration Tokenを配らず、Cloudflare Accessで保護した単一のMCPエンドポイントを提供します。
+
+| 観点 | notion-rag-mcp | 公式Notion MCP |
+| --- | --- | --- |
+| 認証と権限 | 専用IntegrationとCloudflare Access。Integrationに共有した情報だけを対象にできる | 各メンバーがOAuthで接続し、そのメンバーのNotion権限で動作する |
+| 検索 | チャンク化、ベクトル検索、FTSを組み合わせて検索する | Notionの最新コンテンツを直接検索する |
+| データの鮮度 | 索引後に反映される。更新は再インデックスまたは定期実行に依存する | Notionの最新状態を参照する |
+| 操作範囲 | 検索・ページ取得・索引管理に限定する | 検索・取得に加え、ページ作成や更新も行える |
+| 運用 | Cloudflareリソース、索引、Accessポリシーを運用する | Notionがホストし、インフラ運用は不要 |
+| 向く用途 | 承認済みの社内ナレッジを、安定した検索対象として提供したい場合 | 個人のNotionを調べたり、ページを直接編集したりしたい場合 |
+
+公式Notion MCPの接続方法と対応ツールは、[Notion公式ドキュメント](https://developers.notion.com/guides/mcp/overview) および [対応ツール一覧](https://developers.notion.com/guides/mcp/mcp-supported-tools) を参照してください。
 
 ## Deploy to Cloudflare
 
