@@ -40,12 +40,6 @@
       "class_name": "NotionIndexWorkItemWorkflow"
     }
   ],
-  "services": [
-    {
-      "binding": "NOTION_INDEX_SERVICE",
-      "service": "notion-rag-mcp"
-    }
-  ],
   "ai": {
     "binding": "AI"
   },

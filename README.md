@@ -83,7 +83,7 @@ bun run check
 
 Deploy to Cloudflare ボタンではこの準備を対話形式で行えます。Wrangler を直接使う場合は、リソース作成と ID 設定後に `bun run deploy` を実行します。
 
-Workflows のページ処理を同一 Worker 内で分割するため、`NOTION_INDEX_SERVICE` はこの Worker 自身への Service Binding です。Worker を増やす構成ではありません。
+ページ処理は `NOTION_INDEX_WORK_ITEM_WORKFLOW` を通じて同一 Worker の Workflow entrypoint に分割されます。デプロイ先の Worker 名に依存する Service Binding は使用しません。
 
 ## 既存環境からの切替
 
