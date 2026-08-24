@@ -4,6 +4,18 @@ import { notionRagMcpCloudflareWorker } from "../worker";
 vi.mock("cloudflare:workers", () => ({ WorkflowEntrypoint: class {} }));
 
 describe("Notion RAG MCP endpoint", () => {
+  test("rejects GET stream requests instead of opening a short-lived SSE stream", async () => {
+    const response = await notionRagMcpCloudflareWorker.fetch(
+      new Request("https://mcp.example.test/mcp", {
+        method: "GET",
+        headers: { accept: "text/event-stream" },
+      }),
+    );
+
+    expect(response.status).toBe(405);
+    expect(response.headers.get("allow")).toBe("POST, DELETE");
+  });
+
   test("does not require a Worker-level shared secret", async () => {
     const initialize = await notionRagMcpCloudflareWorker.fetch(
       jsonRpcRequest({

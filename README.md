@@ -56,7 +56,9 @@ Notion を巡回して D1・FTS・Vectorize に索引し、MCP から検索で�
 
 上のボタンは、リポジトリを自分の GitHub アカウントへ複製し、Workers Builds でデプロイします。D1、Vectorize、Workers AI、Browser Rendering、Workflows のバインディングは `wrangler.jsonc` から作成・接続され、`deploy` スクリプトで D1 migration を適用してから Worker を公開します。
 
-セットアップ画面では `NOTION_API_TOKEN` を入力します。この値は `.dev.vars.example` には含まれておらず、Worker secret として保存されます。Notion integration には対象のページ・データベースを共有してください。
+Workers Builds のコマンドは、Build command を `bun run build`、Deploy command を `bun run deploy` に設定してください。`build` スクリプトは `wrangler deploy --dry-run` でWorkerをコンパイル・検証し、実際の公開とD1 migrationは `deploy` スクリプトだけが行います。現行Wranglerには `wrangler build` コマンドはありません。
+
+セットアップ画面では `NOTION_API_TOKEN` を入力します。この値はリポジトリには含めず、Worker secret として保存されます。Notion integration には対象のページ・データベースを共有してください。
 
 この標準ボタンは公開 GitHub リポジトリ向けです。現時点の `ts-76/notion-rag-mcp` は非公開のため、第三者向けに配布する前に公開設定へ変更してください。この変更ではリポジトリの公開設定や Cloudflare リソースを変更していません。
 

@@ -11,6 +11,14 @@ export async function handleNativeMcpRequest<Bindings extends object>(
   createServer: (env: Bindings) => McpServer,
 ): Promise<Response> {
   const request = context.req.raw;
+
+  // This Worker creates a fresh stateless transport for every request, so it cannot keep a
+  // server-initiated SSE stream alive. Returning a short-lived stream makes MCP clients reconnect
+  // continuously; explicitly reject stream requests as allowed by the MCP specification.
+  if (request.method === "GET") {
+    return new Response(null, { status: 405, headers: { Allow: "POST, DELETE" } });
+  }
+
   if (await isLegacyRequest(request)) {
     // Preserve JSON-only responses for 2025-era clients while the v2 handler serves 2026 requests.
     return await handleLegacyMcpRequest(request, context.env, createServer);

@@ -2,8 +2,10 @@
   "name": "notion-rag-mcp",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "bun@1.3.13",
   "type": "module",
   "scripts": {
+    "build": "wrangler deploy --dry-run",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint:secrets": "secretlint \"**/*\"",
