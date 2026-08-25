@@ -20,7 +20,7 @@ Notion を巡回して D1・FTS・Vectorize に索引し、MCP から検索で�
 - Firebase OAuth、組織・ロール別のアクセス制御、管理画面
 - スキルレジストリ、プラグイン配布、アプリ作成レポート
 
-公開する MCP と管理用 REST エンドポイントには、Cloudflare Zero Trust Access を適用してください。Worker 自身は認証を実装しないため、Access を適用せずに公開してはいけません。
+MCP と管理用 REST エンドポイントは `@cloudflare/workers-oauth-provider` により OAuth 2.1 で保護され、Cloudflare Access for SaaS を上流 IdP として使用します。`/health` だけは未認証で公開されます。
 
 > **費用に関する注意:** Cloudflare Zero Trust Access の Free プランは 50 ユーザーまでです。51 ユーザー以上で利用する場合は有料プランが必要で、従量課金プランは現在 1 ユーザーあたり月額 7 米ドルです。Workers、D1、Vectorize などの利用料金はこれとは別に発生し得ます。料金は変更されるため、導入前に [Cloudflare Zero Trust の料金ページ](https://www.cloudflare.com/plans/zero-trust-services/) を確認してください。
 
@@ -58,11 +58,29 @@ Notion を巡回して D1・FTS・Vectorize に索引し、MCP から検索で�
 
 Workers Builds のコマンドは、Build command を `bun run build`、Deploy command を `bun run deploy` に設定してください。`build` スクリプトは `wrangler deploy --dry-run` でWorkerをコンパイル・検証し、実際の公開とD1 migrationは `deploy` スクリプトだけが行います。現行Wranglerには `wrangler build` コマンドはありません。
 
-セットアップ画面では `NOTION_API_TOKEN` を入力します。この値はリポジトリには含めず、Worker secret として保存されます。Notion integration には対象のページ・データベースを共有してください。
+セットアップ画面では `NOTION_API_TOKEN` と後述の Access OAuth secrets を入力します。これらの値はリポジトリには含めず、Worker secret として保存します。Notion integration には対象のページ・データベースを共有してください。
 
-この標準ボタンは公開 GitHub リポジトリ向けです。現時点の `ts-76/notion-rag-mcp` は非公開のため、第三者向けに配布する前に公開設定へ変更してください。この変更ではリポジトリの公開設定や Cloudflare リソースを変更していません。
+この標準ボタンは公開 GitHub リポジトリ向けです。現時点の `ts-76/notion-rag-mcp` は非公開のため、第三者向けに配布する前に公開設定へ変更してください。
 
-デプロイ完了後、Worker 全体を Cloudflare Zero Trust Access で保護してください。Worker 内に共有シークレット認証はありません。
+## Cloudflare Access OAuth
+
+1. Zero Trust ダッシュボードで **Access for SaaS > Generic OIDC** アプリケーションを作成する。
+2. Callback URL に本番の `https://<worker-host>/callback` を設定する。ローカル検証も行う場合は `http://localhost:8787/callback` も追加する。
+3. OAuth state・grant・token 用の KV namespace を作成し、出力された ID を `wrangler.jsonc` の `OAUTH_KV` に設定する。
+4. Access for SaaS アプリに表示される Client ID、Client secret、Authorization URL、Token URL、JWKS URL を Worker secrets に設定する。
+5. Cookie 署名鍵には十分に長いランダム値を設定する。
+
+```sh
+bunx wrangler kv namespace create OAUTH_KV
+bunx wrangler secret put ACCESS_CLIENT_ID
+bunx wrangler secret put ACCESS_CLIENT_SECRET
+bunx wrangler secret put ACCESS_AUTHORIZATION_URL
+bunx wrangler secret put ACCESS_TOKEN_URL
+bunx wrangler secret put ACCESS_JWKS_URL
+openssl rand -hex 32 | bunx wrangler secret put COOKIE_ENCRYPTION_KEY
+```
+
+OAuth provider は `/authorize`、`/callback`、`/register`、`/token` と discovery metadata を公開します。有効な bearer token がない `/mcp`、`/sources`、`/reindex-jobs` への要求は拒否されます。Access の include/exclude ポリシーで、利用を許可するユーザーまたはグループを制限してください。
 
 ## ローカル検証
 

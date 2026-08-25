@@ -17,7 +17,7 @@ import {
   sha256Hex,
   type NotionBlock,
 } from "../features/notion/content";
-import { notionRagMcpCloudflareWorker } from "../worker";
+import { notionRagMcpApplicationWorker } from "../worker/application";
 import type {
   CloudflareD1Database,
   CloudflareD1PreparedStatement,
@@ -65,7 +65,7 @@ describe("Notion reindex Workflow orchestration", () => {
       NOTION_INDEX_SERVICE: {
         async fetch(request) {
           serviceCallCount += 1;
-          return await notionRagMcpCloudflareWorker.fetch(request, env);
+          return await notionRagMcpApplicationWorker.fetch(request, env);
         },
       },
     };

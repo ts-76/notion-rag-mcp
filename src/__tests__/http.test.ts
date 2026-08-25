@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
-import { notionRagMcpCloudflareWorker } from "../worker";
+import { startScheduledNotionReindexes } from "../app/create-app";
+import { notionRagMcpApplicationWorker } from "../worker/application";
 import { NotionIndexWorkItemWorkflow } from "../app/create-app";
 import type { NotionRagMcpBindings, NotionReindexWorkflowPayload } from "../worker/bindings";
 import type { WorkflowStep } from "cloudflare:workers";
@@ -40,7 +41,7 @@ describe("Notion index worker HTTP contract", () => {
   test("starts reindex jobs through the Workflow binding", async () => {
     const workflow = new FakeWorkflowBinding();
 
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
         headers: {
@@ -65,7 +66,7 @@ describe("Notion index worker HTTP contract", () => {
   test("accepts an explicit Vectorize repair workflow", async () => {
     const workflow = new FakeWorkflowBinding();
 
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
         headers: {
@@ -84,7 +85,7 @@ describe("Notion index worker HTTP contract", () => {
   });
 
   test("accepts job requests without Worker bearer authentication", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
         body: JSON.stringify(createPayload({ jobId: "job-unauthorized" })),
@@ -96,7 +97,7 @@ describe("Notion index worker HTTP contract", () => {
   });
 
   test("reports missing Workflow binding", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
         body: JSON.stringify(createPayload({ jobId: "job-no-workflow" })),
@@ -112,7 +113,7 @@ describe("Notion index worker HTTP contract", () => {
   });
 
   test("returns bad_request for invalid JSON", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -129,7 +130,7 @@ describe("Notion index worker HTTP contract", () => {
   });
 
   test("returns bad_request for an invalid workflow payload", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -146,7 +147,7 @@ describe("Notion index worker HTTP contract", () => {
   });
 
   test("reports Workflow create failures", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       new Request("https://index.example.test/reindex-jobs", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -163,7 +164,7 @@ describe("Notion index worker HTTP contract", () => {
   });
 
   test("returns Workflow status for a job id", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       new Request("https://index.example.test/reindex-jobs/job-1", {
       }),
       createEnv({ workflow: new FakeWorkflowBinding({ status: { state: "running" } }) }),
@@ -180,11 +181,7 @@ describe("Notion index worker HTTP contract", () => {
     const workflow = new FakeWorkflowBinding();
     const context = new FakeExecutionContext();
 
-    await notionRagMcpCloudflareWorker.scheduled(
-      {},
-      createEnv({ workflow, db: new FakeD1() }),
-      context,
-    );
+    context.waitUntil(startScheduledNotionReindexes(createEnv({ workflow, db: new FakeD1() })));
     await context.flush();
 
     expect(workflow.created).toHaveLength(2);
@@ -196,7 +193,7 @@ describe("Notion index worker HTTP contract", () => {
   });
 
   test("reports Workflow status failures", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       new Request("https://index.example.test/reindex-jobs/job-1", {
       }),
       createEnv({ workflow: new FakeWorkflowBinding({ statusError: new Error("status down") }) }),

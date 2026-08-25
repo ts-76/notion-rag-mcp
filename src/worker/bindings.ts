@@ -9,6 +9,13 @@ export interface NotionRagMcpBindings {
   readonly NOTION_VECTORIZE_MONTHLY_UPSERT_DIMENSION_WARNING?: string;
   readonly NOTION_VECTORIZE_MONTHLY_UPSERT_DIMENSION_BUDGET?: string;
   readonly NOTION_EXTERNAL_HOST_ALLOWLIST?: string;
+  readonly OAUTH_KV?: OAuthKvNamespace;
+  readonly ACCESS_CLIENT_ID?: string;
+  readonly ACCESS_CLIENT_SECRET?: string;
+  readonly ACCESS_TOKEN_URL?: string;
+  readonly ACCESS_AUTHORIZATION_URL?: string;
+  readonly ACCESS_JWKS_URL?: string;
+  readonly COOKIE_ENCRYPTION_KEY?: string;
   readonly NOTION_REINDEX_WORKFLOW?: WorkflowBinding<NotionReindexWorkflowPayload>;
   readonly NOTION_INDEX_SERVICE?: ServiceFetcher;
   readonly NOTION_INDEX_WORK_ITEM_WORKFLOW?: WorkflowBinding<NotionIndexWorkItemWorkflowPayload>;
@@ -40,6 +47,12 @@ export type NotionIndexWorkItemWorkflowPayload = {
 };
 
 export type BrowserBinding = unknown;
+
+export interface OAuthKvNamespace {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+  delete(key: string): Promise<void>;
+}
 
 export interface ServiceFetcher {
   fetch(request: Request): Promise<Response>;

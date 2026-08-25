@@ -1,3 +1,13 @@
 # Create an internal integration at https://www.notion.so/my-integrations.
 # Share each page or database to be indexed with that integration.
 NOTION_API_TOKEN=
+
+# Create a Cloudflare Access for SaaS generic OIDC application.
+# Set its callback URL to http://localhost:8787/callback for local development.
+ACCESS_CLIENT_ID=
+ACCESS_CLIENT_SECRET=
+ACCESS_TOKEN_URL=
+ACCESS_AUTHORIZATION_URL=
+ACCESS_JWKS_URL=
+# Generate with: openssl rand -hex 32
+COOKIE_ENCRYPTION_KEY=

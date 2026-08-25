@@ -1,11 +1,11 @@
 import { describe, expect, test, vi } from "vitest";
-import { notionRagMcpCloudflareWorker } from "../worker";
+import { notionRagMcpApplicationWorker } from "../worker/application";
 
 vi.mock("cloudflare:workers", () => ({ WorkflowEntrypoint: class {} }));
 
 describe("Notion RAG MCP endpoint", () => {
   test("rejects GET stream requests instead of opening a short-lived SSE stream", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       new Request("https://mcp.example.test/mcp", {
         method: "GET",
         headers: { accept: "text/event-stream" },
@@ -17,7 +17,7 @@ describe("Notion RAG MCP endpoint", () => {
   });
 
   test("does not require a Worker-level shared secret", async () => {
-    const initialize = await notionRagMcpCloudflareWorker.fetch(
+    const initialize = await notionRagMcpApplicationWorker.fetch(
       jsonRpcRequest({
         id: 1,
         method: "initialize",
@@ -36,7 +36,7 @@ describe("Notion RAG MCP endpoint", () => {
   });
 
   test("publishes only the standalone Notion RAG tools", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       jsonRpcRequest({ id: 2, method: "tools/list", params: {} }),
     );
     const payload = (await response.json()) as {
@@ -55,7 +55,7 @@ describe("Notion RAG MCP endpoint", () => {
   });
 
   test("accepts stateless MCP 2026-07-28 requests", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       jsonRpcRequest(
         {
           id: 3,
@@ -81,7 +81,7 @@ describe("Notion RAG MCP endpoint", () => {
   });
 
   test("advertises MCP 2026-07-28 through server discovery", async () => {
-    const response = await notionRagMcpCloudflareWorker.fetch(
+    const response = await notionRagMcpApplicationWorker.fetch(
       jsonRpcRequest(
         {
           id: 4,

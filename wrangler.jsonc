@@ -14,6 +14,11 @@
   "triggers": {
     "crons": ["0 18 */4 * *"]
   },
+  "kv_namespaces": [
+    {
+      "binding": "OAUTH_KV"
+    }
+  ],
   "d1_databases": [
     {
       "binding": "NOTION_RAG_DB",
@@ -61,6 +66,14 @@
 
   // Required secrets before deployment:
   //   bunx wrangler secret put NOTION_API_TOKEN
+  //   bunx wrangler secret put ACCESS_CLIENT_ID
+  //   bunx wrangler secret put ACCESS_CLIENT_SECRET
+  //   bunx wrangler secret put ACCESS_TOKEN_URL
+  //   bunx wrangler secret put ACCESS_AUTHORIZATION_URL
+  //   bunx wrangler secret put ACCESS_JWKS_URL
+  //   bunx wrangler secret put COOKIE_ENCRYPTION_KEY
+  // Create OAUTH_KV before deployment and add its id to the binding above:
+  //   bunx wrangler kv namespace create OAUTH_KV
   // External-link indexing is disabled unless exact trusted hosts are listed in vars:
   //   "NOTION_EXTERNAL_HOST_ALLOWLIST": "docs.example.com,handbook.example.com"
 }
